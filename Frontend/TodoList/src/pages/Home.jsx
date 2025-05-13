@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-
-const API_URL = "http://localhost:5000/api/v1";
+import Config from "../Config";
 
 const Home = () => {
   const [formData, setFormData] = useState({ textdata: "" });
@@ -9,18 +8,27 @@ const Home = () => {
   const [editId, setEditId] = useState(null);
 
   // 🔹 Fetch All Tasks
-  useEffect(() => {
-    const fetchAllTask = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/todos`);
-        setTask(response.data.data);
-      } catch (error) {
-        console.error("Error fetching tasks:", error.message);
-      }
-    };
+useEffect(() => {
+  const fetchAllTask = async () => {
+    const token = localStorage.getItem("token");
 
-    fetchAllTask();
-  }, []);
+    try {
+      const response = await axios.get(`${Config.api_endpoint}/todos`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ IMPORTANT
+        },
+      });
+
+      setTask(response.data.data);
+    } catch (error) {
+      console.error("Error fetching tasks:", error.response?.data?.message || error.message);
+    }
+  };
+
+  fetchAllTask();
+}, []);
+
+
 
   // 🔹 Handle Input Change
   const handleInputChange = (e) => {
@@ -28,24 +36,40 @@ const Home = () => {
   };
 
   // 🔹 Add Task
-  const handleAddTask = async (e) => {
-    e.preventDefault();
-    if (!formData.textdata.trim()) return;
+ const handleAddTask = async (e) => {
+  e.preventDefault();
+  console.log("first")
+  if (!formData.textdata.trim()) return;
 
-    try {
-      const response = await axios.post(`${API_URL}/addTodo`, formData);
-      setTask([...task, response.data.data]); // Update UI instantly
-      setFormData({ textdata: "" }); // Clear input field
-    } catch (error) {
-      console.error("Error adding task:", error.message);
-    }
-  };
+  const token = localStorage.getItem("token");
+  console.log("second")
+  try {
+    const response = await axios.post(
+      `${Config.api_endpoint}/addTodo`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,  // 🔥 Pass token in header
+        },
+      }
+    );
+  console.log("third")
+
+
+    console.log( response.data.data );
+    setTask([...task, response.data.data]); // In case backend returns full array
+    setFormData({ textdata: "" });
+  } catch (error) {
+    console.error("Error adding task:", error.response?.data?.message || error.message);
+  }
+};
+
 
   // 🔹 Update Task
   const handleUpdateTask = async (id) => {
     if (!formData.textdata.trim()) return;
     try {
-      const response = await axios.put(`${API_URL}/updateTodo/`, {
+      const response = await axios.put(`${Config.api_endpoint}/updateTodo/`, {
         id,
         textdata: formData.textdata,
       });
@@ -67,7 +91,7 @@ const Home = () => {
         
         await axios.request({
             method: "delete",
-            url: `${API_URL}/deleteTodo`, //  No ID in URL
+            url: `${Config.api_endpoint}/deleteTodo`, //  No ID in URL
             data: { id }, //  Send ID in request body
         });
 
@@ -158,7 +182,7 @@ const Home = () => {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-700 text-sm">No tasks added yet.</p>
+            <p className="text-gray-700 text-sm">No tasks added yet...</p>
           )}
         </div>
       </div>

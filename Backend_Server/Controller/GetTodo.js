@@ -2,18 +2,17 @@ const TodoModel= require("../Models/todoSchema");
 
 const GetTodo= async(req,res)=>{
     try{
-        const Todo = await TodoModel.find({});
+        const userEmail = req.user.email;
+        const userTodo = await TodoModel.findOne({
+            userEmail
+        });
 
-        if(!Todo.length){
-            return res.status(404).json({
-                success:false,
-                message:"Todo List is Empty",
-            });
-        }
+        // if no document exists yet, treat as empty list
+    const tasks = userTodo ? userTodo.tasks : [];
         return res.status(200).json({
             success:true,
-            length:Todo.length,
-            data:Todo,
+            length:tasks.length,
+            data:tasks,
 
         });
     }
